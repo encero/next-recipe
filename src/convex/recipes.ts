@@ -34,3 +34,10 @@ export const listRecipes = query({
       .collect();
   },
 });
+
+export const getRecipe = query({
+  args: { id: v.id("recipes") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
