@@ -34,6 +34,7 @@ interface RecipeFormProps {
 export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const router = useRouter()
   const insertRecipe = useMutation(api.recipes.insertRecipe)
+  const updateRecipe = useMutation(api.recipes.updateRecipe)
   
   const [formData, setFormData] = useState<RecipeFormData>({
     name: recipe?.name || "",
@@ -73,8 +74,26 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
         
         router.push(`/home/${recipeId}`)
       } else {
-        // TODO: Implement edit functionality when edit mutation is available
-        console.log("Edit functionality not yet implemented")
+        // Edit mode
+        if (!recipe?._id) {
+          throw new Error("Recipe ID not found")
+        }
+        
+        await updateRecipe({
+          id: recipe._id as any,
+          name: formData.name,
+          image: formData.image || "/pasta.jpg",
+          description: formData.description,
+          ingredients: cleanedIngredients,
+          instructions: cleanedInstructions,
+          prepTime: formData.prepTime,
+          cookTime: formData.cookTime,
+          servings: formData.servings,
+          lastCooked: recipe.lastCooked,
+          scheduledFor: recipe.scheduledFor,
+        })
+        
+        router.push(`/home/${recipe._id}`)
       }
     } catch (error) {
       console.error("Error saving recipe:", error)
@@ -141,9 +160,9 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" asChild>
-          <Link href="/home">
+          <Link href={mode === "edit" && recipe ? `/home/${recipe._id}` : "/home"}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Recipes
+            {mode === "edit" ? "Back to Recipe" : "Back to Recipes"}
           </Link>
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">{mode === "create" ? "Add New Recipe" : "Edit Recipe"}</h1>
@@ -335,7 +354,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" asChild>
-            <Link href="/home">Cancel</Link>
+            <Link href={mode === "edit" && recipe ? `/home/${recipe._id}` : "/home"}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={isSubmitting} className="bg-orange-500 hover:bg-orange-600">
             <Save className="w-4 h-4 mr-2" />

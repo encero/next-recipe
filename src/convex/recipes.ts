@@ -16,13 +16,35 @@ export const insertRecipe = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-
-    args.ingredients = args.ingredients.filter((ingredient) => ingredient !== "");
-    args.instructions = args.instructions.filter((instruction) => instruction !== "");
     
     return await ctx.db.insert("recipes", {
       ...args,
       createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const updateRecipe = mutation({
+  args: {
+    id: v.id("recipes"),
+    name: v.string(),
+    image: v.string(),
+    description: v.string(),
+    ingredients: v.array(v.string()),
+    instructions: v.array(v.string()),
+    prepTime: v.number(),
+    cookTime: v.number(),
+    servings: v.number(),
+    lastCooked: v.optional(v.number()),
+    scheduledFor: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...updateData } = args;
+    const now = Date.now();
+    
+    return await ctx.db.patch(id, {
+      ...updateData,
       updatedAt: now,
     });
   },
