@@ -169,6 +169,7 @@ export default function RecipeDetailPage() {
         {/* Recipe Content */}
         <div  className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Ingredients */}
+          {recipe.ingredients.length > 0 && (
           <Card className="animate-in fade-in slide-in-from-left-4 duration-200 fill-mode-backwards" style={{ animationDelay: "50ms" }}>
             <CardHeader>
               <CardTitle>Ingredients</CardTitle>
@@ -184,8 +185,9 @@ export default function RecipeDetailPage() {
               </ul>
             </CardContent>
           </Card>
-
+          )}
           {/* Instructions */}
+          {recipe.instructions.length > 0 && (
           <Card className="animate-in fade-in slide-in-from-right-4 duration-200 fill-mode-backwards" style={{ animationDelay: "100ms" }}>
             <CardHeader>
               <CardTitle>Instructions</CardTitle>
@@ -203,6 +205,7 @@ export default function RecipeDetailPage() {
               </ol>
             </CardContent>
           </Card>
+          )}
         </div>
       </div>
     </PageWrapper>

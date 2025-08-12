@@ -1,5 +1,5 @@
 export interface Recipe {
-  id: string
+  _id: string
   name: string
   image: string
   description: string
@@ -8,8 +8,8 @@ export interface Recipe {
   prepTime: number // in minutes
   cookTime: number // in minutes
   servings: number
-  lastCooked?: Date
-  scheduledFor?: Date
-  createdAt: Date
-  updatedAt: Date
+  lastCooked?: number // UTC timestamp in milliseconds
+  scheduledFor?: number // UTC timestamp in milliseconds
+  createdAt: number // UTC timestamp in milliseconds
+  updatedAt: number // UTC timestamp in milliseconds
 }

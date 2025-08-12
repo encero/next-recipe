@@ -16,6 +16,9 @@ export const insertRecipe = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+
+    args.ingredients = args.ingredients.filter((ingredient) => ingredient !== "");
+    args.instructions = args.instructions.filter((instruction) => instruction !== "");
     
     return await ctx.db.insert("recipes", {
       ...args,

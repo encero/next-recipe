@@ -4,14 +4,27 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import type { Recipe, RecipeFormData } from "~/types/recipe"
+import { useMutation } from "convex/react"
+import { api } from "~/convex/_generated/api"
+import type { Recipe } from "~/types/recipe"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { Plus, Minus, Save, ArrowLeft } from "lucide-react"
+import { Plus, Minus, Save, ArrowLeft, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
+
+interface RecipeFormData {
+  name: string
+  image: string
+  description: string
+  ingredients: string[]
+  instructions: string[]
+  prepTime: number
+  cookTime: number
+  servings: number
+}
 
 interface RecipeFormProps {
   recipe?: Recipe
@@ -20,6 +33,8 @@ interface RecipeFormProps {
 
 export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const router = useRouter()
+  const insertRecipe = useMutation(api.recipes.insertRecipe)
+  
   const [formData, setFormData] = useState<RecipeFormData>({
     name: recipe?.name || "",
     image: recipe?.image || "",
@@ -32,6 +47,8 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ingredientsCollapsed, setIngredientsCollapsed] = useState(formData.ingredients.length === 0)
+  const [instructionsCollapsed, setInstructionsCollapsed] = useState(formData.instructions.length === 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,23 +59,40 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
       const cleanedIngredients = formData.ingredients.filter((item) => item.trim() !== "")
       const cleanedInstructions = formData.instructions.filter((item) => item.trim() !== "")
 
-      const recipeData: Recipe = {
-        id: recipe?.id || crypto.randomUUID(),
-        ...formData,
-        ingredients: cleanedIngredients,
-        instructions: cleanedInstructions,
-        createdAt: recipe?.createdAt || new Date(),
-        updatedAt: new Date(),
-        lastCooked: recipe?.lastCooked,
-        scheduledFor: recipe?.scheduledFor,
+      if (mode === "create") {
+        const recipeId = await insertRecipe({
+          name: formData.name,
+          image: formData.image || "/pasta.jpg", // Default image if none provided
+          description: formData.description,
+          ingredients: cleanedIngredients,
+          instructions: cleanedInstructions,
+          prepTime: formData.prepTime,
+          cookTime: formData.cookTime,
+          servings: formData.servings,
+        })
+        
+        router.push(`/home/${recipeId}`)
+      } else {
+        // TODO: Implement edit functionality when edit mutation is available
+        console.log("Edit functionality not yet implemented")
       }
-
-      saveRecipe(recipeData)
-      router.push(`/recipes/${recipeData.id}`)
     } catch (error) {
       console.error("Error saving recipe:", error)
+      alert("Error saving recipe. Please try again.")
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const removeIngredient = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index),
+    }))
+    
+    // If we're removing the last ingredient, collapse the section
+    if (formData.ingredients.length <= 1) {
+      setIngredientsCollapsed(true)
     }
   }
 
@@ -66,13 +100,6 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     setFormData((prev) => ({
       ...prev,
       ingredients: [...prev.ingredients, ""],
-    }))
-  }
-
-  const removeIngredient = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index),
     }))
   }
 
@@ -95,6 +122,11 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
       ...prev,
       instructions: prev.instructions.filter((_, i) => i !== index),
     }))
+    
+    // If we're removing the last instruction, collapse the section
+    if (formData.instructions.length <= 1) {
+      setInstructionsCollapsed(true)
+    }
   }
 
   const updateInstruction = (index: number, value: string) => {
@@ -109,9 +141,9 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" asChild>
-          <Link href={recipe ? `/recipes/${recipe.id}` : "/home"}>
+          <Link href="/home">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            Back to Recipes
           </Link>
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">{mode === "create" ? "Add New Recipe" : "Edit Recipe"}</h1>
@@ -125,7 +157,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="name">Recipe Name</Label>
+              <Label htmlFor="name">Recipe Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -152,7 +184,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                 id="image"
                 value={formData.image}
                 onChange={(e) => setFormData((prev) => ({ ...prev, image: e.target.value }))}
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image.jpg (optional)"
                 type="url"
               />
             </div>
@@ -193,85 +225,117 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
         </Card>
 
         {/* Ingredients */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Ingredients</CardTitle>
-              <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Ingredient
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {formData.ingredients.map((ingredient, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={ingredient}
-                  onChange={(e) => updateIngredient(index, e.target.value)}
-                  placeholder={`Ingredient ${index + 1}`}
-                  className="flex-1"
-                />
-                {formData.ingredients.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeIngredient(index)}
-                    className="px-3"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                )}
+        {!ingredientsCollapsed && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Ingredients</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addIngredient}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Ingredient
+                </Button>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {formData.ingredients.map((ingredient, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={ingredient}
+                    onChange={(e) => updateIngredient(index, e.target.value)}
+                    placeholder={`Ingredient ${index + 1}`}
+                    className="flex-1"
+                  />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeIngredient(index)}
+                      className="px-3"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Instructions */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Instructions</CardTitle>
-              <Button type="button" variant="outline" size="sm" onClick={addInstruction}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Step
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {formData.instructions.map((instruction, index) => (
-              <div key={index} className="flex gap-2">
-                <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-medium mt-1">
-                  {index + 1}
-                </div>
-                <Textarea
-                  value={instruction}
-                  onChange={(e) => updateInstruction(index, e.target.value)}
-                  placeholder={`Step ${index + 1} instructions`}
-                  rows={2}
-                  className="flex-1"
-                />
-                {formData.instructions.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeInstruction(index)}
-                    className="px-3 mt-1"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                )}
+        {!instructionsCollapsed && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Instructions</CardTitle>
+                <Button type="button" variant="outline" size="sm" onClick={addInstruction}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Step
+                </Button>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {formData.instructions.map((instruction, index) => (
+                <div key={index} className="flex gap-2">
+                  <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-medium mt-1">
+                    {index + 1}
+                  </div>
+                  <Textarea
+                    value={instruction}
+                    onChange={(e) => updateInstruction(index, e.target.value)}
+                    placeholder={`Step ${index + 1} instructions`}
+                    rows={2}
+                    className="flex-1"
+                  />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeInstruction(index)}
+                      className="px-3 mt-1"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Toggle Buttons for Hidden Sections */}
+        <div className="flex gap-4 justify-center">
+          {ingredientsCollapsed && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setIngredientsCollapsed(false);
+                addIngredient();
+              }}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Ingredients
+            </Button>
+          )}
+          {instructionsCollapsed && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setInstructionsCollapsed(false);
+                addInstruction();
+              }}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Instructions
+            </Button>
+          )}
+        </div>
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" asChild>
-            <Link href={recipe ? `/recipes/${recipe.id}` : "/"}>Cancel</Link>
+            <Link href="/home">Cancel</Link>
           </Button>
           <Button type="submit" disabled={isSubmitting} className="bg-orange-500 hover:bg-orange-600">
             <Save className="w-4 h-4 mr-2" />
