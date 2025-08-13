@@ -7,7 +7,7 @@ export default async function Home() {
     const {userId} = await auth();
 
     if (userId !== null) {
-        return redirect("home");
+        return redirect("/home");
     }
 
     return (
