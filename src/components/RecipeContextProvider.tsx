@@ -18,6 +18,6 @@ export function RecipeContextProvider({ children }: { children: React.ReactNode 
     );
 }
 
-export function userRecipes() {
+export function useUserRecipes() {
     return useContext(RecipeListContext);
 }

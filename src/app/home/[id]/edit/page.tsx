@@ -5,12 +5,13 @@ import { api } from "~/convex/_generated/api"
 import { useParams } from "next/navigation"
 import { RecipeForm } from "~/components/recipe-form"
 import { LoadingSpinner } from "~/components/ui/loading-spinner"
+import type { Id } from "~/convex/_generated/dataModel"
 
 export default function EditRecipePage() {
   const params = useParams()
   const recipeId = params.id as string
 
-  const recipe = useQuery(api.recipes.getRecipe, { id: recipeId as any })
+  const recipe = useQuery(api.recipes.getRecipe, { id: recipeId as Id<"recipes"> })
 
   if (recipe === undefined) {
     return <LoadingSpinner />
@@ -21,7 +22,7 @@ export default function EditRecipePage() {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Recipe not found</h1>
-          <p className="text-gray-600">The recipe you're trying to edit doesn't exist.</p>
+          <p className="text-gray-600">The recipe you&apos;re trying to edit doesn&apos;t exist.</p>
         </div>
       </div>
     )

@@ -5,10 +5,10 @@ import { Card, CardContent } from "~/components/ui/card"
 import { Plus, Clock, Calendar } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { userRecipes } from "~/components/RecipeContextProvider"
+import { useUserRecipes } from "~/components/RecipeContextProvider"
 
 export default function RecipesPage() {
-  const recipes = userRecipes();
+  const recipes = useUserRecipes();
 
   const formatLastCooked = (timestamp: number) => {
     const days = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60 * 24))

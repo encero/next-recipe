@@ -8,10 +8,6 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import {
     ClerkProvider,
-    SignInButton,
-    SignOutButton,
-    SignedIn,
-    SignedOut,
 } from '@clerk/nextjs'
 
 export const metadata: Metadata = {
@@ -34,15 +30,7 @@ export default function RootLayout({
                 <ClerkProvider>
                     <ConvexClientProvider>
                         <TRPCReactProvider>
-                            {/* <div>
-                                <SignedOut>
-                                    You are signed out <SignInButton />
-                                </SignedOut>
-                                <SignedIn>
-                                    Hello
-                                    <SignOutButton />
-                                </SignedIn>
-                            </div> */}
+                            
                             {children}
                         </TRPCReactProvider>
                     </ConvexClientProvider>

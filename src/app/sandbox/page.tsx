@@ -3,6 +3,7 @@
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState } from "react";
+import Link from "next/link";
 
 // Mock recipe data definitions
 const sampleRecipes = [
@@ -180,14 +181,14 @@ const sampleRecipes = [
 
 export default function SandboxPage() {
   const [isSeeding, setIsSeeding] = useState(false);
-  const [seedResult, setSeedResult] = useState<string>("");
+  const [seedResult, setResult] = useState<string>("");
   
   const insertRecipe = useMutation(api.recipes.insertRecipe);
 
   const handleSeedDatabase = async () => {
     try {
       setIsSeeding(true);
-      setSeedResult("Seeding database...");
+      setResult("Seeding database...");
       
       // Insert recipes one by one using the single recipe mutation
       const recipeIds = [];
@@ -196,38 +197,13 @@ export default function SandboxPage() {
         recipeIds.push(recipeId);
       }
       
-      setSeedResult(`Successfully seeded database with ${recipeIds.length} recipes!`);
+      setResult(`Successfully seeded database with ${recipeIds.length} recipes!`);
     } catch (error) {
       console.error("Error seeding database:", error);
-      setSeedResult(`Error seeding database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setResult(`Error seeding database: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSeeding(false);
     }
-  };
-
-  const handleClearDatabase = async () => {
-    // TODO: Implement clear database functionality
-    setSeedResult("Clear database functionality not yet implemented");
-  };
-
-  const handleViewRecipes = async () => {
-    // TODO: Implement view recipes functionality
-    setSeedResult("View recipes functionality not yet implemented");
-  };
-
-  const handleExportData = async () => {
-    // TODO: Implement export data functionality
-    setSeedResult("Export data functionality not yet implemented");
-  };
-
-  const handleImportData = async () => {
-    // TODO: Implement import data functionality
-    setSeedResult("Import data functionality not yet implemented");
-  };
-
-  const handleResetAll = async () => {
-    // TODO: Implement reset all functionality
-    setSeedResult("Reset all functionality not yet implemented");
   };
 
   const buttons = [
@@ -245,7 +221,7 @@ export default function SandboxPage() {
       <div className="max-w-6xl mx-auto px-4">
         {/* Navigation */}
         <div className="mb-6">
-          <a
+          <Link
             href="/home"
             className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors duration-200"
           >
@@ -253,7 +229,7 @@ export default function SandboxPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to App
-          </a>
+          </Link>
         </div>
         
         <div className="text-center mb-8">

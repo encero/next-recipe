@@ -19,7 +19,8 @@ import {
 import { ArrowLeft, Clock, Users, Calendar, Edit, Trash2, ChefHat, AlertTriangle } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { userRecipes } from "~/components/RecipeContextProvider"
+import { useUserRecipes } from "~/components/RecipeContextProvider"
+import type { Id } from "~/convex/_generated/dataModel"
 
 // Common header component
 function RecipeHeader() {
@@ -52,7 +53,7 @@ export default function RecipeDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const recipes = userRecipes();
+  const recipes = useUserRecipes();
   const recipe = recipes?.find((recipe) => recipe._id === recipeId);
   const deleteRecipe = useMutation(api.recipes.deleteRecipe);
 
@@ -61,7 +62,7 @@ export default function RecipeDetailPage() {
     
     setIsDeleting(true);
     try {
-      await deleteRecipe({ id: recipe._id as any });
+      await deleteRecipe({ id: recipe._id as Id<"recipes"> });
       // Close the dialog
       setIsDeleteDialogOpen(false);
       // Navigate back to recipes list
@@ -115,7 +116,7 @@ export default function RecipeDetailPage() {
       <PageWrapper>
         <div className="text-center py-12 animate-in fade-in duration-200">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Recipe not found</h1>
-          <p className="text-gray-600 mb-6">The recipe you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-6">The recipe you&apos;re looking for doesn&apos;t exist.</p>
           <Button asChild>
             <Link href="/home">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -201,7 +202,7 @@ export default function RecipeDetailPage() {
                       Delete Recipe
                     </DialogTitle>
                     <DialogDescription>
-                      Are you sure you want to delete "{recipe.name}"? This action cannot be undone.
+                      Are you sure you want to delete &quot;{recipe.name}&quot;? This action cannot be undone.
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter className="gap-2">

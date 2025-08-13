@@ -16,6 +16,7 @@ import { Textarea } from "~/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Plus, Minus, Save, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import type { Id } from "~/convex/_generated/dataModel"
 
 // Zod validation schema
 const recipeFormSchema = z.object({
@@ -44,14 +45,14 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const form = useForm<RecipeFormData>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: {
-      recipeName: recipe?.name || "",
-      image: recipe?.image || "",
-      description: recipe?.description || "",
-      ingredients: recipe?.ingredients.map((ingredient) => ({ value: ingredient })) || [],
-      instructions: recipe?.instructions.map((instruction) => ({ value: instruction })) || [],
-      prepTime: recipe?.prepTime || 0,
-      cookTime: recipe?.cookTime || 0,
-      servings: recipe?.servings || 1,
+      recipeName: recipe?.name ?? "",
+      image: recipe?.image ?? "",
+      description: recipe?.description ?? "",
+      ingredients: recipe?.ingredients.map((ingredient) => ({ value: ingredient })) ?? [],
+      instructions: recipe?.instructions.map((instruction) => ({ value: instruction })) ?? [],
+      prepTime: recipe?.prepTime ?? 0,
+      cookTime: recipe?.cookTime ?? 0,
+      servings: recipe?.servings ?? 1,
     },
   })
 
@@ -69,7 +70,6 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     remove: removeIngredient,
   } = useFieldArray({
     control,
-    // @ts-ignore 
     name: "ingredients",
   })
 
@@ -79,7 +79,6 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     remove: removeInstruction,
   } = useFieldArray({
     control,
-    // @ts-ignore
     name: "instructions",
   })
 
@@ -118,7 +117,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
         }
 
         await updateRecipe({
-          id: recipe._id as any,
+          id: recipe._id as Id<"recipes">,
           name: data.recipeName,
           image: data.image ?? "",
           description: data.description ?? "",
