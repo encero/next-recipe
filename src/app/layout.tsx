@@ -29,12 +29,12 @@ export default function RootLayout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <ClerkProvider>
-            <ConvexClientProvider>
-                <TRPCReactProvider>
-                    <html lang="en" className={`${geist.variable}`}>
-                        <body>
-                            <div>
+        <html lang="en" className={`${geist.variable}`}>
+            <body>
+                <ClerkProvider>
+                    <ConvexClientProvider>
+                        <TRPCReactProvider>
+                            {/* <div>
                                 <SignedOut>
                                     You are signed out <SignInButton />
                                 </SignedOut>
@@ -42,12 +42,12 @@ export default function RootLayout({
                                     Hello
                                     <SignOutButton />
                                 </SignedIn>
-                            </div>
+                            </div> */}
                             {children}
-                        </body>
-                    </html>
-                </TRPCReactProvider>
-            </ConvexClientProvider>
-        </ ClerkProvider>
+                        </TRPCReactProvider>
+                    </ConvexClientProvider>
+                </ClerkProvider>
+            </body>
+        </html>
     );
 }

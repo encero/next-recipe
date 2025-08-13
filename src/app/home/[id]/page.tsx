@@ -1,7 +1,5 @@
 "use client"
 
-import { useQuery } from "convex/react"
-import { api } from "../../../convex/_generated/api"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
@@ -9,6 +7,7 @@ import { Badge } from "~/components/ui/badge"
 import { ArrowLeft, Clock, Users, Calendar, Edit, Trash2, ChefHat } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { userRecipes } from "~/components/RecipeContextProvider"
 
 // Common header component
 function RecipeHeader() {
@@ -39,7 +38,8 @@ export default function RecipeDetailPage() {
   const router = useRouter()
   const recipeId = params.id as string
 
-  const recipe = useQuery(api.recipes.getRecipe, { id: recipeId as any })
+  const recipes = userRecipes();
+  const recipe = recipes?.find((recipe) => recipe._id === recipeId);
 
   const handleDelete = () => {
     if (recipe && confirm("Are you sure you want to delete this recipe?")) {
