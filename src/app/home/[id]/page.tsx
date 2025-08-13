@@ -1,10 +1,22 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
+import { useState } from "react"
+import { useMutation } from "convex/react"
+import { api } from "~/convex/_generated/api"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Badge } from "~/components/ui/badge"
-import { ArrowLeft, Clock, Users, Calendar, Edit, Trash2, ChefHat } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog"
+import { ArrowLeft, Clock, Users, Calendar, Edit, Trash2, ChefHat, AlertTriangle } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { userRecipes } from "~/components/RecipeContextProvider"
@@ -37,13 +49,28 @@ export default function RecipeDetailPage() {
   const params = useParams()
   const router = useRouter()
   const recipeId = params.id as string
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const recipes = userRecipes();
   const recipe = recipes?.find((recipe) => recipe._id === recipeId);
+  const deleteRecipe = useMutation(api.recipes.deleteRecipe);
 
-  const handleDelete = () => {
-    if (recipe && confirm("Are you sure you want to delete this recipe?")) {
-      router.push("/home")
+  const handleDelete = async () => {
+    if (!recipe) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteRecipe({ id: recipe._id as any });
+      // Close the dialog
+      setIsDeleteDialogOpen(false);
+      // Navigate back to recipes list
+      router.push("/home");
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      alert("Error deleting recipe. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -158,10 +185,50 @@ export default function RecipeDetailPage() {
                   Edit
                 </Link>
               </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
+              
+              {/* Delete Button with Dialog */}
+              <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                      Delete Recipe
+                    </DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete "{recipe.name}"? This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDeleteDialogOpen(false)}
+                      disabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Deleting...
+                        </>
+                      ) : (
+                        "Delete Recipe"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>

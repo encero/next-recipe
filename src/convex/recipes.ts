@@ -50,6 +50,17 @@ export const updateRecipe = mutation({
   },
 });
 
+export const deleteRecipe = mutation({
+  args: {
+    id: v.id("recipes"),
+  },
+  handler: async (ctx, args) => {
+    // Delete the recipe from the database
+    await ctx.db.delete(args.id);
+    return { success: true };
+  },
+});
+
 export const listRecipes = query({
   args: {},
   handler: async (ctx) => {
