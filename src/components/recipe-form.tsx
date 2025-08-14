@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
+import { useRef, useEffect } from "react"
 
 import { useRouter } from "next/navigation"
 import { useMutation } from "convex/react"
-import { useForm } from "@tanstack/react-form"
+import { useForm, useStore } from "@tanstack/react-form"
 import { z } from "zod"
 import { api } from "~/convex/_generated/api"
 import type { Recipe } from "~/types/recipe"
@@ -38,6 +39,9 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const router = useRouter()
   const insertRecipe = useMutation(api.recipes.insertRecipe)
   const updateRecipe = useMutation(api.recipes.updateRecipe)
+  
+  // Refs to track ingredient input fields for focusing
+  const ingredientRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const form = useForm({
     defaultValues: {
@@ -56,8 +60,8 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     onSubmit: async ({ value }) => {
       try {
         // Filter out empty ingredients and instructions
-        const cleanedIngredients = value.ingredients.map((item) => item.value).filter((item) => item.trim() !== "")
-        const cleanedInstructions = value.instructions.map((item) => item.value).filter((item) => item.trim() !== "")
+        const cleanedIngredients = value.ingredients.map((item) => item.value.trim()).filter((item) => item !== "")
+        const cleanedInstructions = value.instructions.map((item) => item.value.trim()).filter((item) => item !== "")
 
         if (mode === "create") {
           const recipeId = await insertRecipe({
@@ -99,19 +103,16 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     },
   })
 
-  const addInstruction = () => {
-    void form.pushFieldValue("instructions", { value: "" })
-  }
-
-  const removeInstruction = (index: number) => {
-    void form.removeFieldValue("instructions", index)
-  }
-
-  const watchedInstructions = form.getFieldValue("instructions")
-
-  console.log("watchedInstructions", watchedInstructions)
-
-  const instructionsCollapsed = watchedInstructions.length === 0
+  // Focus the newly added ingredient field
+  useEffect(() => {
+    if (ingredientRefs.current.length > 0) {
+      const lastIndex = ingredientRefs.current.length - 1
+      const lastRef = ingredientRefs.current[lastIndex]
+      if (lastRef && lastRef.value === "") {
+        lastRef.focus()
+      }
+    }
+  }, [useStore(form.store, (state) => state.values.ingredients)])
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -154,9 +155,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                   />
                   {field.state.meta.errors && (
                     <p className="text-sm text-red-500 mt-1">
-                      {field.state.meta.errors.map(error =>
-                        typeof error === 'string' ? error : JSON.stringify(error)
-                      ).join(", ")}
+                      {field.state.meta.errors.map(error => error?.message).join(", ")}
                     </p>
                   )}
                 </div>
@@ -207,13 +206,11 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(Number(e.target.value))}
-                      className={field.state.meta.errors ? "border-red-500" : ""}
+                      className={field.state.meta.errors.length > 0 ? "border-red-500" : ""}
                     />
                     {field.state.meta.errors && (
                       <p className="text-sm text-red-500 mt-1">
-                        {field.state.meta.errors.map(error =>
-                          typeof error === 'string' ? error : JSON.stringify(error)
-                        ).join(", ")}
+                        {field.state.meta.errors.map(error => error?.message).join(", ")}
                       </p>
                     )}
                   </div>
@@ -231,13 +228,11 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(Number(e.target.value))}
-                      className={field.state.meta.errors ? "border-red-500" : ""}
+                      className={field.state.meta.errors.length > 0 ? "border-red-500" : ""}
                     />
                     {field.state.meta.errors && (
                       <p className="text-sm text-red-500 mt-1">
-                        {field.state.meta.errors.map(error =>
-                          typeof error === 'string' ? error : JSON.stringify(error)
-                        ).join(", ")}
+                        {field.state.meta.errors.map(error => error?.message).join(", ")}
                       </p>
                     )}
                   </div>
@@ -255,13 +250,11 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(Number(e.target.value))}
-                      className={field.state.meta.errors ? "border-red-500" : ""}
+                      className={field.state.meta.errors.length > 0 ? "border-red-500" : ""}
                     />
                     {field.state.meta.errors && (
                       <p className="text-sm text-red-500 mt-1">
-                        {field.state.meta.errors.map(error =>
-                          typeof error === 'string' ? error : JSON.stringify(error)
-                        ).join(", ")}
+                        {field.state.meta.errors.map(error => error?.message).join(", ")}
                       </p>
                     )}
                   </div>
@@ -272,122 +265,154 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
         </Card>
 
         {/* Ingredients */}
-        <form.Subscribe selector={form => form.values.ingredients} children={(ingredients) => (
-          ingredients.length > 0 && (<Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Ingredients</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={() => form.pushFieldValue("ingredients", { value: "" })}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Ingredient
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <form.Field name="ingredients" mode="array">
-                {(field) => (
-                  <>
-                    {field.state.value.map((_, i) => (
-                      <form.Field key={i} name={`ingredients[${i}].value`}>
-                        {(subfield) => (
-                          <div className="flex gap-2">
-                            <Input
-                              value={subfield.state.value}
-                              onChange={(e) => subfield.handleChange(e.target.value)}
-                              placeholder={`Ingredient ${i + 1}`}
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => form.removeFieldValue("ingredients", i)}
-                              className="px-3"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </form.Field>
-
-                    ))}
-                  </>
-                )}
-              </form.Field>
-            </CardContent>
-          </Card>
-          ))} />
+        <form.Subscribe selector={form => form.values.ingredients}>
+          {(ingredients) => (
+            ingredients.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Ingredients</CardTitle>
+                    <Button type="button" variant="outline" size="sm" onClick={() => form.pushFieldValue("ingredients", { value: "" })}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Ingredient
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <form.Field name="ingredients" mode="array">
+                    {(field) => (
+                      <>
+                        {field.state.value.map((_, i) => (
+                          <form.Field key={i} name={`ingredients[${i}].value`}>
+                            {(subfield) => (
+                              <div className="flex gap-2">
+                                <Input
+                                  value={subfield.state.value}
+                                  onChange={(e) => subfield.handleChange(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      form.pushFieldValue("ingredients", { value: "" })
+                                    }
+                                  }}
+                                  placeholder={`Ingredient ${i + 1}`}
+                                  className="flex-1"
+                                  ref={(el) => {
+                                    ingredientRefs.current[i] = el
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => form.removeFieldValue("ingredients", i)}
+                                  className="px-3"
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </form.Field>
+                        ))}
+                      </>
+                    )}
+                  </form.Field>
+                </CardContent>
+              </Card>
+            )
+          )}
+        </form.Subscribe>
 
         {/* Instructions */}
-        {!instructionsCollapsed && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Instructions</CardTitle>
-                <Button type="button" variant="outline" size="sm" onClick={addInstruction}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Step
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {watchedInstructions.map((_: { value: string }, index: number) => (
-                <div key={index} className="flex gap-2">
-                  <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-medium mt-1">
-                    {index + 1}
+        <form.Subscribe selector={form => form.values.instructions}>
+          {(instructions) => (
+            instructions.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Instructions</CardTitle>
+                    <Button type="button" variant="outline" size="sm" onClick={() => form.pushFieldValue("instructions", { value: "" })}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Step
+                    </Button>
                   </div>
-                  <Textarea
-                    value={watchedInstructions[index]?.value ?? ""}
-                    onChange={(e) => {
-                      const newInstructions = [...watchedInstructions]
-                      newInstructions[index] = { value: e.target.value }
-                      form.setFieldValue("instructions", newInstructions)
-                    }}
-                    placeholder={`Step ${index + 1} instructions`}
-                    rows={2}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeInstruction(index)}
-                    className="px-3 mt-1"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <form.Field name="instructions" mode="array">
+                    {(field) => (
+                      <>
+                        {field.state.value.map((_, i) => (
+                          <form.Field key={i} name={`instructions[${i}].value`}>
+                            {(subfield) => (
+                              <div className="flex gap-2">
+                                <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-medium mt-1">
+                                  {i + 1}
+                                </div>
+                                <Textarea
+                                  value={subfield.state.value}
+                                  onChange={(e) => subfield.handleChange(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      form.pushFieldValue("instructions", { value: "" })
+                                    }
+                                  }}
+                                  placeholder={`Step ${i + 1} instructions`}
+                                  rows={2}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => form.removeFieldValue("instructions", i)}
+                                  className="px-3 mt-1"
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </form.Field>
+                        ))}
+                      </>
+                    )}
+                  </form.Field>
+                </CardContent>
+              </Card>
+            )
+          )}
+        </form.Subscribe>
 
         {/* Toggle Buttons for Hidden Sections */}
         <div className="flex gap-4 justify-center">
-          <form.Subscribe selector={form => form.values.ingredients} children={(ingredients) => (
-            ingredients.length === 0 && <Button
-              type="button"
-              variant="outline"
-              onClick={() => form.pushFieldValue("ingredients", { value: "" })}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Ingredients
-            </Button>
-          )} />
-          {instructionsCollapsed && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                addInstruction();
-              }}
-              className="flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add Instructions
-            </Button>
-          )}
+          <form.Subscribe selector={form => form.values.ingredients}>
+            {(ingredients) => (
+              ingredients.length === 0 && <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.pushFieldValue("ingredients", { value: "" })}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Ingredients
+              </Button>
+            )}
+          </form.Subscribe>
+          <form.Subscribe selector={form => form.values.instructions}>
+            {(instructions) => (
+              instructions.length === 0 && <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.pushFieldValue("instructions", { value: "" })}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Instructions
+              </Button>
+            )}
+          </form.Subscribe>
         </div>
 
         {/* Submit Button */}
