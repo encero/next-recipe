@@ -11,6 +11,7 @@ const RecipeListContext = createContext<Recipe[] | undefined>(undefined);
 
 export function RecipeContextProvider({ children }: { children: React.ReactNode }) {
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const { data: recipes, error } = tryCatchSync(() => useQuery(api.recipes.listRecipes));
 
     if (error) {

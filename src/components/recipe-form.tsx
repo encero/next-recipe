@@ -14,7 +14,8 @@ import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { Plus, Minus, Save, ArrowLeft } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog"
+import { Plus, Minus, Save, ArrowLeft, Image as ImageIcon, X } from "lucide-react"
 import Link from "next/link"
 import type { Id } from "~/convex/_generated/dataModel"
 
@@ -44,6 +45,8 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const ingredientRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const [newIngredient, setNewIngredient] = useState<boolean>(false)
+  const [imageModalOpen, setImageModalOpen] = useState<boolean>(false)
+  const [tempImageUrl, setTempImageUrl] = useState<string>("")
 
   const form = useForm({
     defaultValues: {
@@ -149,7 +152,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
           <CardContent className="space-y-4">
             <form.Field name="recipeName">
               {(field) => (
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="name">Recipe Name *</Label>
                   <Input
                     id="name"
@@ -159,7 +162,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                     placeholder="Enter recipe name"
                     className={field.state.meta.errors.length > 0 ? "border-red-500" : ""}
                   />
-                  {field.state.meta.errors && (
+                  {field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-500 mt-1">
                       {field.state.meta.errors.map(error => error?.message).join(", ")}
                     </p>
@@ -170,7 +173,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
 
             <form.Field name="description">
               {(field) => (
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
@@ -186,24 +189,94 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
 
             <form.Field name="image">
               {(field) => (
-                <div>
+                <div className="grid gap-3">
                   <Label htmlFor="image">Image URL</Label>
-                  <Input
-                    id="image"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="https://example.com/image.jpg (optional)"
-                    type="url"
-                  />
+                  {field.state.value ? (
+                    <div className="flex items-center gap-3 mt-2">
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                        <img
+                          src={field.state.value}
+                          alt="Recipe preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-600 truncate">{field.state.value}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => field.handleChange("")}
+                        className="flex-shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full mt-2 flex items-center gap-2 hover:scale-102"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                          Add Image
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add Recipe Image</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="modal-image-url">Image URL</Label>
+                            <Input
+                              id="modal-image-url"
+                              value={tempImageUrl}
+                              onChange={(e) => setTempImageUrl(e.target.value)}
+                              placeholder="https://example.com/image.jpg"
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setImageModalOpen(false)
+                                setTempImageUrl("")
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                field.handleChange(tempImageUrl)
+                                setImageModalOpen(false)
+                                setTempImageUrl("")
+                              }}
+                            >
+                              Add Image
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               )}
             </form.Field>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="flex gap-4 max-md:flex-wrap">
               <form.Field name="prepTime">
                 {(field) => (
-                  <div>
+                  <div className="w-full md:w-1/3 grid gap-3">
                     <Label htmlFor="prepTime">Prep Time (min)</Label>
                     <Input
                       id="prepTime"
@@ -225,7 +298,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
 
               <form.Field name="cookTime">
                 {(field) => (
-                  <div>
+                  <div className="w-full md:w-1/3 grid gap-3">
                     <Label htmlFor="cookTime">Cook Time (min)</Label>
                     <Input
                       id="cookTime"
@@ -247,7 +320,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
 
               <form.Field name="servings">
                 {(field) => (
-                  <div>
+                  <div className="w-full md:w-1/3 grid gap-3">
                     <Label htmlFor="servings">Servings</Label>
                     <Input
                       id="servings"
@@ -284,7 +357,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent>
                   <form.Field name="ingredients" mode="array">
                     {(field) => (
                       <>
@@ -353,38 +426,34 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                     {(field) => (
                       <>
                         {field.state.value.map((_, i) => (
-                          <form.Field key={i} name={`instructions[${i}].value`}>
-                            {(subfield) => (
-                              <div className="flex gap-2">
-                                <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-medium mt-1">
-                                  {i + 1}
+                          <div key={i}>
+                            <form.Field key={i} name={`instructions[${i}].value`}>
+                              {(subfield) => (
+                                <div className="flex gap-2 flex-row items-center">
+                                  <div className="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-medium mt-1">
+                                    {i + 1}
+                                  </div>
+                                  <Textarea
+                                    value={subfield.state.value}
+                                    onChange={(e) => subfield.handleChange(e.target.value)}
+
+                                    placeholder={`Step ${i + 1} instructions`}
+                                    rows={2}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => form.removeFieldValue("instructions", i)}
+                                    className="px-3 mt-1"
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </Button>
                                 </div>
-                                <Textarea
-                                  value={subfield.state.value}
-                                  onChange={(e) => subfield.handleChange(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      form.pushFieldValue("instructions", { value: "" })
-                                    }
-                                  }}
-                                  placeholder={`Step ${i + 1} instructions`}
-                                  rows={2}
-                                  className="flex-1"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => form.removeFieldValue("instructions", i)}
-                                  className="px-3 mt-1"
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
-                          </form.Field>
+                              )}
+                            </form.Field>
+                          </div>
                         ))}
                       </>
                     )}
