@@ -2,10 +2,9 @@
 
 import { useQuery } from "convex/react";
 import { redirect } from "next/navigation";
-import router from "next/router";
 import { createContext, useContext } from "react";
 import { api } from "~/convex/_generated/api";
-import { tryCatch, tryCatchSync } from "~/lib/utils";
+import { tryCatchSync } from "~/lib/utils";
 import type { Recipe } from "~/types/recipe";
 
 const RecipeListContext = createContext<Recipe[] | undefined>(undefined);

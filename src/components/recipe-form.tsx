@@ -1,11 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useState } from "react"
 
 import { useRouter } from "next/navigation"
 import { useMutation } from "convex/react"
-import { useForm, useStore } from "@tanstack/react-form"
+import { useForm } from "@tanstack/react-form"
 import { z } from "zod"
 import { api } from "~/convex/_generated/api"
 import type { Recipe } from "~/types/recipe"
@@ -39,9 +39,11 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const router = useRouter()
   const insertRecipe = useMutation(api.recipes.insertRecipe)
   const updateRecipe = useMutation(api.recipes.updateRecipe)
-  
+
   // Refs to track ingredient input fields for focusing
   const ingredientRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  const [newIngredient, setNewIngredient] = useState<boolean>(false)
 
   const form = useForm({
     defaultValues: {
@@ -105,14 +107,18 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
 
   // Focus the newly added ingredient field
   useEffect(() => {
-    if (ingredientRefs.current.length > 0) {
-      const lastIndex = ingredientRefs.current.length - 1
-      const lastRef = ingredientRefs.current[lastIndex]
-      if (lastRef && lastRef.value === "") {
-        lastRef.focus()
-      }
+    if (!newIngredient || ingredientRefs.current.length === 0) {
+      return
     }
-  }, [useStore(form.store, (state) => state.values.ingredients)])
+
+    setNewIngredient(false)
+
+    const lastIndex = ingredientRefs.current.length - 1
+    const lastRef = ingredientRefs.current[lastIndex]
+    if (lastRef && lastRef.value === "") {
+      lastRef.focus()
+    }
+  }, [newIngredient])
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -151,7 +157,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter recipe name"
-                    className={field.state.meta.errors ? "border-red-500" : ""}
+                    className={field.state.meta.errors.length > 0 ? "border-red-500" : ""}
                   />
                   {field.state.meta.errors && (
                     <p className="text-sm text-red-500 mt-1">
@@ -293,6 +299,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                                     if (e.key === "Enter") {
                                       e.preventDefault()
                                       e.stopPropagation()
+                                      setNewIngredient(true)
                                       form.pushFieldValue("ingredients", { value: "" })
                                     }
                                   }}
@@ -306,7 +313,10 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => form.removeFieldValue("ingredients", i)}
+                                  onClick={() => {
+                                    void form.removeFieldValue("ingredients", i)
+                                    ingredientRefs.current.splice(i, 1)
+                                  }}
                                   className="px-3"
                                 >
                                   <Minus className="w-4 h-4" />
