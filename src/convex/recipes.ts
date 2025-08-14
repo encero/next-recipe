@@ -1,10 +1,10 @@
-import { GenericMutationCtx, GenericQueryCtx } from "convex/server";
+import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { DataModel } from "./_generated/dataModel";
+import type { DataModel } from "./_generated/dataModel";
 
 
-async function getOwner(ctx:GenericMutationCtx<DataModel>|GenericQueryCtx<DataModel>,) {
+async function getOwner(ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>,) {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
         throw new Error("Not authenticated");
