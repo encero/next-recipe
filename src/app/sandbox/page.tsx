@@ -94,7 +94,7 @@ const sampleRecipes = [
   },
   {
     name: "Pasta Carbonara",
-    image: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400",
+    image: "",
     description: "Traditional Italian pasta with eggs, cheese, and pancetta",
     ingredients: ["Spaghetti", "Eggs", "Pecorino Romano", "Pancetta", "Black pepper", "Salt", "Pasta water"],
     instructions: [
@@ -145,7 +145,7 @@ const sampleRecipes = [
   },
   {
     name: "French Toast",
-    image: "https://images.unsplash.com/photo-1484723091739-30a097c8b4ef?w=400",
+    image: "",
     description: "Classic French toast with cinnamon and maple syrup",
     ingredients: ["Bread slices", "Eggs", "Milk", "Cinnamon", "Vanilla extract", "Butter", "Maple syrup"],
     instructions: [
@@ -182,21 +182,21 @@ const sampleRecipes = [
 export default function SandboxPage() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedResult, setResult] = useState<string>("");
-  
+
   const insertRecipe = useMutation(api.recipes.insertRecipe);
 
   const handleSeedDatabase = async () => {
     try {
       setIsSeeding(true);
       setResult("Seeding database...");
-      
+
       // Insert recipes one by one using the single recipe mutation
       const recipeIds = [];
       for (const recipe of sampleRecipes) {
         const recipeId = await insertRecipe(recipe);
         recipeIds.push(recipeId);
       }
-      
+
       setResult(`Successfully seeded database with ${recipeIds.length} recipes!`);
     } catch (error) {
       console.error("Error seeding database:", error);
@@ -231,7 +231,7 @@ export default function SandboxPage() {
             Back to App
           </Link>
         </div>
-        
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Sandbox</h1>
           <p className="text-lg text-gray-600">
@@ -256,12 +256,12 @@ export default function SandboxPage() {
               disabled={button.disabled}
               className={`
                 p-6 rounded-lg shadow-sm border transition-all duration-200
-                ${button.disabled 
-                  ? 'opacity-50 cursor-not-allowed' 
+                ${button.disabled
+                  ? 'opacity-50 cursor-not-allowed'
                   : 'hover:shadow-md hover:scale-105'
                 }
-                ${button.variant === 'primary' 
-                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                ${button.variant === 'primary'
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
                   : button.variant === 'danger'
                   ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
                   : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'

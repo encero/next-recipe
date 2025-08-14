@@ -3,6 +3,7 @@ import { v } from "convex/values";
 
 export default defineSchema({
   recipes: defineTable({
+    owner: v.string(),
     name: v.string(),
     image: v.string(),
     description: v.string(),
@@ -16,7 +17,6 @@ export default defineSchema({
     createdAt: v.number(), // stored as UTC timestamp in milliseconds
     updatedAt: v.number(), // stored as UTC timestamp in milliseconds
   })
+    .index("by_owner", ["owner"])
     .index("by_createdAt", ["createdAt"])
-    .index("by_scheduledFor", ["scheduledFor"])
-    .index("by_lastCooked", ["lastCooked"]),
 });
