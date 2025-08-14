@@ -1,0 +1,3 @@
+- [ ] Prepare form for image upload
+- [ ] implement image upload
+- [ ] fix the landing page, get rid of the defaults 
